@@ -5,9 +5,17 @@ build/
 dist/
 wheels/
 *.egg-info
-.pdf
-.docx
-.drawio
+*.pdf
+*.docx
+*.drawio
 
 # Virtual environments
 .venv
+
+# Secrets / local config
+.env
+
+# Local SQLite databases
+*.db
+*.db-shm
+*.db-wal
