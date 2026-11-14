@@ -1,6 +1,12 @@
 import streamlit as st
+from sqlalchemy.exc import DBAPIError
 
-from web_app.db import init_db
+from web_app.db import (
+    DatabasePermissionError,
+    DatabaseUnavailableError,
+    describe_db_error,
+    init_db,
+)
 
 all_pages = [
     st.Page("all_pages/1_landing_page.py", title="Home"),
@@ -12,14 +18,28 @@ all_pages = [
 ]
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner="Conectando a la base de datos…")
 def _setup_database() -> bool:
+    # Si falla, Streamlit no guarda el resultado y lo reintenta en el próximo rerun.
     init_db()
     return True
 
 
+def _show_db_error(message: str) -> None:
+    st.error(f"🛑 No hay conexión con la base de datos.\n\n{message}")
+    if st.button("Reintentar"):
+        st.rerun()
+    st.stop()
+
+
 def main() -> None:
-    _setup_database()
+    try:
+        _setup_database()
+    except DatabasePermissionError as exc:
+        # Hay conexión: las páginas de solo lectura siguen funcionando.
+        st.sidebar.warning(f"⚠️ Registro/login no disponibles.\n\n{exc}")
+    except DatabaseUnavailableError as exc:
+        _show_db_error(str(exc))
 
     user = st.session_state.get("user")
     with st.sidebar:
@@ -30,7 +50,12 @@ def main() -> None:
                 st.rerun()
 
     pg = st.navigation(all_pages)
-    pg.run()
+    try:
+        pg.run()
+    except DatabaseUnavailableError as exc:
+        _show_db_error(str(exc))
+    except DBAPIError as exc:
+        _show_db_error(describe_db_error(exc))
 
 
 if __name__ == "__main__":

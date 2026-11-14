@@ -7,17 +7,16 @@ requires-python = ">=3.14"
 dependencies = [
     "argon2-cffi>=25.1.0",
     "cryptography>=45.0.0",
+    # sshtunnel 0.4 usa paramiko.DSSKey, que se eliminó en paramiko 4
+    "paramiko>=3.5,<4",
+    "psycopg[binary]>=3.2.10",
     "pyotp>=2.9.0",
     "python-dotenv>=1.1.0",
     "qrcode[pil]>=8.2",
     "requests==2.33.0",
     "sqlalchemy>=2.0.40",
+    "sshtunnel>=0.4.0",
     "streamlit>=1.66.1",
-]
-
-[project.optional-dependencies]
-postgres = [
-    "psycopg[binary]>=3.2.10",
 ]
 
 [project.scripts]

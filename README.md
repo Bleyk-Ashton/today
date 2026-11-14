@@ -21,24 +21,34 @@ uv run streamlit run src/web_app/main.py
 
 Las tablas se crean automáticamente al iniciar la app.
 
-### Usar PostgreSQL
+### Conexión a PostgreSQL en AWS
 
-```sql
-CREATE ROLE today_app LOGIN PASSWORD 'cambie-esta-contraseña';
-CREATE DATABASE today OWNER today_app;
-```
+La BD (`base-de-datos`, `192.168.101.103:5432`, base `ciber_bleyk`) no tiene IP pública.
 
-En `.env`:
+**Desde el PC (desarrollo)**: túnel SSH por el servidor web vía Tailscale. El PC debe estar
+conectado a Tailscale y ambas instancias encendidas.
 
 ```
 DB_ENGINE=postgresql
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=today
-DB_USER=today_app
-DB_PASSWORD=cambie-esta-contraseña
-DB_SSLMODE=require
+DB_HOST=192.168.101.103
+DB_NAME=ciber_bleyk
+DB_USER=analyst_3
+DB_PASSWORD='...'
+DB_USE_TUNNEL=true
+SSH_HOST=webserver.taild46e50.ts.net
+SSH_USER=dbtunnel
+SSH_KEY_PATH=C:\ruta\a\analyst_3
 ```
+
+**En el servidor web**: igual pero con `DB_USE_TUNNEL=false` (conexión directa a la IP privada;
+requiere que `pg_hba.conf` permita `192.168.1.196`).
+
+El túnel y el pool de conexiones se abren una vez por proceso y se reutilizan; si el túnel se
+cae se reconecta solo. Los errores de timeout, clave SSH rechazada y contraseña de PostgreSQL
+incorrecta se muestran con un mensaje claro y un botón *Reintentar*.
+
+El usuario de la BD necesita permiso para crear y escribir la tabla `users` (registro) y
+`SELECT` sobre las tablas `a` y `b` (páginas Equipo A / Equipo B, solo lectura).
 
 ## Estructura
 

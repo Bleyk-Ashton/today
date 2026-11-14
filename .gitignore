@@ -19,3 +19,6 @@ wheels/
 *.db
 *.db-shm
 *.db-wal
+
+# Streamlit secrets
+.streamlit/secrets.toml
