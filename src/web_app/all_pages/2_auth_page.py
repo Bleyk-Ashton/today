@@ -78,7 +78,7 @@ def login_section() -> None:
         st.session_state["user"] = {
             "id": result.user_id, "email": result.email, "name": result.full_name,
         }
-        st.session_state["flash"] = result.message
+        st.session_state["go_to_account"] = True
         st.rerun()
     elif result.status is LoginStatus.OTP_SETUP_REQUIRED:
         st.session_state["otp_setup_user_id"] = result.user_id
@@ -160,7 +160,10 @@ if flash := st.session_state.pop("flash", None):
 user = st.session_state.get("user")
 if user:
     st.info(f"Sesión iniciada como **{user['name']}** ({user['email']}).")
-    if st.button("Cerrar sesión"):
+    c1, c2 = st.columns(2)
+    if c1.button("👤 Ir a Mi cuenta"):
+        st.switch_page("all_pages/7_account_page.py")
+    if c2.button("Cerrar sesión"):
         st.session_state.clear()
         st.rerun()
 elif "otp_setup_user_id" in st.session_state:

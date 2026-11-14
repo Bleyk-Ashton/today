@@ -3,14 +3,11 @@ from datetime import datetime
 import streamlit as st
 
 from web_app import auth_service
+from web_app.guards import require_admin
 
 st.title("👥 Usuarios")
 
-if not st.session_state.get("user"):
-    st.warning("Debe iniciar sesión para acceder a esta página.")
-    if st.button("Ir a Sign In"):
-        st.switch_page("all_pages/2_auth_page.py")
-    st.stop()
+require_admin()
 
 st.write(
     "Descargue los datos de los usuarios registrados en formato CSV. "

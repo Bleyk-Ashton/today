@@ -1,20 +1,23 @@
 import streamlit as st
 from sqlalchemy.exc import DBAPIError
 
+from web_app.auth_service import ROLE_ADMIN
 from web_app.db import (
     DatabasePermissionError,
     DatabaseUnavailableError,
     describe_db_error,
     init_db,
 )
+from web_app.guards import current_role
 
-all_pages = [
-    st.Page("all_pages/1_landing_page.py", title="Home"),
-    st.Page("all_pages/2_auth_page.py", title="Sign Up/Sign In"),
-    st.Page("all_pages/3_A_page.py", title="Equipo A"),
-    st.Page("all_pages/4_B_page.py", title="Equipo B"),
-    st.Page("all_pages/5_C_page.py", title="Equipo Chat"),
-    st.Page("all_pages/6_users_page.py", title="Usuarios"),
+home_page = st.Page("all_pages/1_landing_page.py", title="Home", icon="🏠", default=True)
+auth_page = st.Page("all_pages/2_auth_page.py", title="Sign Up/Sign In", icon="🔐")
+account_page = st.Page("all_pages/7_account_page.py", title="Mi cuenta", icon="👤")
+admin_pages = [
+    st.Page("all_pages/3_A_page.py", title="Equipo A", icon="📄"),
+    st.Page("all_pages/4_B_page.py", title="Equipo B", icon="📄"),
+    st.Page("all_pages/5_C_page.py", title="Equipo Chat", icon="💬"),
+    st.Page("all_pages/6_users_page.py", title="Usuarios", icon="👥"),
 ]
 
 
@@ -32,24 +35,47 @@ def _show_db_error(message: str) -> None:
     st.stop()
 
 
+def _pages_for(role: str | None) -> dict[str, list]:
+    """Menú según el rol: visitante, cliente o administrador."""
+    if role is None:
+        return {"": [home_page, auth_page]}
+    pages = {"": [home_page, account_page, auth_page]}
+    if role == ROLE_ADMIN:
+        pages["Administración"] = admin_pages
+    return pages
+
+
 def main() -> None:
     try:
         _setup_database()
     except DatabasePermissionError as exc:
-        # Hay conexión: las páginas de solo lectura siguen funcionando.
+        # Hay conexión: las páginas que no usan la tabla users siguen funcionando.
         st.sidebar.warning(f"⚠️ Registro/login no disponibles.\n\n{exc}")
     except DatabaseUnavailableError as exc:
         _show_db_error(str(exc))
 
+    try:
+        role = current_role()
+    except DatabaseUnavailableError as exc:
+        _show_db_error(str(exc))
+    except DBAPIError as exc:
+        _show_db_error(describe_db_error(exc))
+
     user = st.session_state.get("user")
     with st.sidebar:
         if user:
-            st.caption(f"Conectado: {user['email']}")
+            badge = "🛡️ Admin" if role == ROLE_ADMIN else "👤 Cliente"
+            st.caption(f"{badge} · {user['email']}")
             if st.button("Cerrar sesión", key="sidebar-logout"):
                 st.session_state.clear()
                 st.rerun()
 
-    pg = st.navigation(all_pages)
+    pg = st.navigation(_pages_for(role))
+
+    # Tras iniciar sesión, llevar al usuario a "Mi cuenta".
+    if user and st.session_state.pop("go_to_account", False):
+        st.switch_page(account_page)
+
     try:
         pg.run()
     except DatabasePermissionError as exc:

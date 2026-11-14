@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 
-from sqlalchemy import Engine, MetaData, Table, create_engine, event, select
+from sqlalchemy import Engine, MetaData, Table, create_engine, event, inspect, select, text
 from sqlalchemy.exc import DBAPIError, NoSuchTableError
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -171,12 +171,28 @@ def get_session() -> Iterator[Session]:
         session.close()
 
 
+def _migrate(engine: Engine) -> None:
+    """Agrega columnas nuevas a tablas creadas por versiones anteriores de la app."""
+    insp = inspect(engine)
+    if "users" not in insp.get_table_names():
+        return
+    columns = {c["name"] for c in insp.get_columns("users")}
+    if "role" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text(
+                "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'cliente'"
+            ))
+        log.info("Migración: columna users.role agregada")
+
+
 def init_db() -> None:
     """Comprueba la conexión y crea las tablas de la app si no existen."""
     from web_app import models  # noqa: F401  (registra los modelos en Base)
 
     try:
-        Base.metadata.create_all(get_engine())
+        engine = get_engine()
+        Base.metadata.create_all(engine)
+        _migrate(engine)
     except DatabaseUnavailableError:
         raise
     except Exception as exc:

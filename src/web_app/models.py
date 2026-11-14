@@ -32,6 +32,9 @@ class User(Base):
     # Credenciales
     email: Mapped[str] = mapped_column(String(254), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    # 'cliente' (por defecto) o 'admin'. Nunca se asigna desde el formulario de
+    # registro: un admin solo se crea con un UPDATE directo en la base de datos.
+    role: Mapped[str] = mapped_column(String(20), default="cliente", server_default="cliente")
 
     # PII
     full_name: Mapped[str] = mapped_column(String(150))

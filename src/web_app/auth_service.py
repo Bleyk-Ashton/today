@@ -276,6 +276,7 @@ class LoginResult:
     user_id: int | None = None
     email: str | None = None
     full_name: str | None = None
+    role: str | None = None
     extra: dict = field(default_factory=dict)
 
 
@@ -362,14 +363,57 @@ def authenticate(email: str, password: str, otp_code: str) -> LoginResult:
             user_id=user.id,
             email=user.email,
             full_name=user.full_name,
+            role=user.role,
         )
+
+
+# ---------------------------------------------------------------------------
+# Roles y perfil
+# ---------------------------------------------------------------------------
+ROLE_CLIENT = "cliente"
+ROLE_ADMIN = "admin"
+
+
+def get_user_role(user_id: int) -> str | None:
+    """Rol actual leído de la BD (no de la sesión), para que un cambio de rol
+    o un usuario eliminado se apliquen de inmediato."""
+    with get_session() as session:
+        return session.scalar(select(User.role).where(User.id == user_id))
+
+
+def _mask(value: str, visible: int = 3) -> str:
+    return "•" * max(0, len(value) - visible) + value[-visible:]
+
+
+def get_my_profile(user_id: int) -> dict | None:
+    """Datos del propio usuario, con los más sensibles enmascarados."""
+    dec = security.decrypt
+    with get_session() as session:
+        u = session.get(User, user_id)
+        if u is None:
+            return None
+        return {
+            "Nombre": u.full_name,
+            "Correo": u.email,
+            "Documento": _mask(dec(u.document_id_enc)),
+            "Fecha de nacimiento": dec(u.birth_date_enc),
+            "Teléfono": _mask(dec(u.phone_enc), 4),
+            "Dirección": dec(u.address_enc),
+            "Tipo de sangre": dec(u.blood_type_enc),
+            "EPS / aseguradora": dec(u.health_insurer_enc),
+            "Condiciones médicas": dec(u.medical_conditions_enc) or "—",
+            "Tarjeta": f"**** **** **** {u.card_last4}",
+            "Vencimiento": dec(u.card_expiry_enc),
+            "Cuenta creada": f"{_aware(u.created_at):%Y-%m-%d %H:%M} UTC" if u.created_at else "—",
+            "Último acceso": f"{_aware(u.last_login_at):%Y-%m-%d %H:%M} UTC" if u.last_login_at else "—",
+        }
 
 
 # ---------------------------------------------------------------------------
 # Exportación CSV
 # ---------------------------------------------------------------------------
 CSV_COLUMNS = [
-    "id", "email", "full_name", "document_id", "birth_date", "phone", "address",
+    "id", "email", "role", "full_name", "document_id", "birth_date", "phone", "address",
     "blood_type", "health_insurer", "medical_conditions", "card_holder",
     "card_number", "card_expiry", "monthly_income", "otp_confirmed",
     "created_at", "last_login_at",
@@ -390,6 +434,7 @@ def export_users_csv() -> bytes:
             writer.writerow({
                 "id": u.id,
                 "email": u.email,
+                "role": u.role,
                 "full_name": u.full_name,
                 "document_id": dec(u.document_id_enc),
                 "birth_date": dec(u.birth_date_enc),
