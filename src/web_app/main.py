@@ -52,6 +52,8 @@ def main() -> None:
     pg = st.navigation(all_pages)
     try:
         pg.run()
+    except DatabasePermissionError as exc:
+        st.error(f"🔒 Sin permisos en la base de datos.\n\n{exc}")
     except DatabaseUnavailableError as exc:
         _show_db_error(str(exc))
     except DBAPIError as exc:

@@ -211,6 +211,8 @@ def read_table(name: str, limit: int = 100) -> list[dict]:
     except DatabaseUnavailableError:
         raise
     except Exception as exc:
+        if "permission denied" in str(exc).lower():
+            raise DatabasePermissionError(describe_db_error(exc)) from exc
         raise DatabaseUnavailableError(describe_db_error(exc)) from exc
 
 
