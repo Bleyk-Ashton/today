@@ -31,7 +31,7 @@ def require_login() -> dict:
     user = current_user()
     if not user:
         st.warning("Debe iniciar sesión para acceder a esta página.")
-        if st.button("Ir a Sign In"):
+        if st.button("Ir a Acceder", type="primary"):
             st.switch_page("all_pages/2_auth_page.py")
         st.stop()
     return user

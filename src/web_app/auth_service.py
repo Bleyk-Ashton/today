@@ -409,6 +409,26 @@ def get_my_profile(user_id: int) -> dict | None:
         }
 
 
+def list_users_summary() -> list[dict]:
+    """Resumen para administradores, sin datos sensibles (no descifra nada)."""
+    now = _now()
+    with get_session() as session:
+        users = session.scalars(select(User).order_by(User.id)).all()
+        return [
+            {
+                "ID": u.id,
+                "Correo": u.email,
+                "Nombre": u.full_name,
+                "Rol": u.role,
+                "OTP activo": bool(u.otp_confirmed),
+                "Bloqueado": bool(_aware(u.locked_until) and _aware(u.locked_until) > now),
+                "Creado": _aware(u.created_at),
+                "Último acceso": _aware(u.last_login_at),
+            }
+            for u in users
+        ]
+
+
 # ---------------------------------------------------------------------------
 # Exportación CSV
 # ---------------------------------------------------------------------------

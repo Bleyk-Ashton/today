@@ -1,0 +1,35 @@
+# Configuración de Streamlit (se lee desde la carpeta donde se ejecuta
+# `streamlit run`, es decir, la raíz del proyecto).
+
+[theme]
+base = "light"
+primaryColor = "#4F46E5"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#EEF2FF"
+textColor = "#0F172A"
+borderColor = "#E2E8F0"
+linkColor = "#4F46E5"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+baseRadius = "large"
+buttonRadius = "full"
+showWidgetBorder = true
+showSidebarBorder = false
+
+[theme.sidebar]
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+textColor = "#E2E8F0"
+primaryColor = "#A5B4FC"
+borderColor = "#334155"
+
+[client]
+# Oculta el menú de desarrollador a los visitantes.
+toolbarMode = "minimal"
+# No mostrar trazas de error (rutas, código) a los usuarios: se registran
+# en el log del servidor. Evita fuga de información.
+showErrorDetails = "none"
+
+[browser]
+# No enviar estadísticas de uso a Streamlit.
+gatherUsageStats = false

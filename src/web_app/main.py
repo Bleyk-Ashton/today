@@ -1,6 +1,9 @@
+from html import escape
+
 import streamlit as st
 from sqlalchemy.exc import DBAPIError
 
+from web_app import ui
 from web_app.auth_service import ROLE_ADMIN
 from web_app.db import (
     DatabasePermissionError,
@@ -11,7 +14,7 @@ from web_app.db import (
 from web_app.guards import current_role
 
 home_page = st.Page("all_pages/1_landing_page.py", title="Home", icon="🏠", default=True)
-auth_page = st.Page("all_pages/2_auth_page.py", title="Sign Up/Sign In", icon="🔐")
+auth_page = st.Page("all_pages/2_auth_page.py", title="Acceder", icon="🔐")
 account_page = st.Page("all_pages/7_account_page.py", title="Mi cuenta", icon="👤")
 admin_pages = [
     st.Page("all_pages/3_A_page.py", title="Equipo A", icon="📄"),
@@ -46,6 +49,7 @@ def _pages_for(role: str | None) -> dict[str, list]:
 
 
 def main() -> None:
+    ui.setup_page()
     try:
         _setup_database()
     except DatabasePermissionError as exc:
@@ -64,9 +68,13 @@ def main() -> None:
     user = st.session_state.get("user")
     with st.sidebar:
         if user:
-            badge = "🛡️ Admin" if role == ROLE_ADMIN else "👤 Cliente"
-            st.caption(f"{badge} · {user['email']}")
-            if st.button("Cerrar sesión", key="sidebar-logout"):
+            is_admin = role == ROLE_ADMIN
+            st.html(
+                ui.badge("🛡️ Administrador" if is_admin else "👤 Cliente", admin=is_admin)
+                + f'<div style="margin-top:.5rem;font-size:.85rem;opacity:.85;word-break:break-all">'
+                f"{escape(user['email'])}</div>"
+            )
+            if st.button("Cerrar sesión", key="sidebar-logout", icon="🚪", width="stretch"):
                 st.session_state.clear()
                 st.rerun()
 
