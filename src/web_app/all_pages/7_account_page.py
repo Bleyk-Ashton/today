@@ -7,7 +7,9 @@ from web_app import auth_service
 from web_app.auth_service import ROLE_ADMIN
 from web_app.guards import current_role, require_login
 
-WELCOME_GIF = Path(__file__).resolve().parents[1] / "assets" / "welcome.gif"
+ASSETS = Path(__file__).resolve().parents[1] / "assets"
+WELCOME_VIDEO = ASSETS / "welcome.mp4"
+WELCOME_GIF = ASSETS / "welcome.gif"
 
 user = require_login()
 profile = auth_service.get_my_profile(user["id"])
@@ -20,7 +22,11 @@ st.title(f"👋 ¡Hola, {first_name}!")
 
 left, right = st.columns([1, 1], vertical_alignment="center")
 with left:
-    if WELCOME_GIF.is_file():
+    # Video tipo GIF: automático, en bucle y sin sonido (los navegadores
+    # bloquean la reproducción automática con sonido). Si no está, usa el GIF.
+    if WELCOME_VIDEO.is_file():
+        st.video(str(WELCOME_VIDEO), autoplay=True, loop=True, muted=True)
+    elif WELCOME_GIF.is_file():
         st.image(str(WELCOME_GIF), width="stretch")
 with right:
     st.markdown(
